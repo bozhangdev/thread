@@ -20,14 +20,18 @@ def generateTerrain():
         a = a + 1
 
 
-def generateObstacle():
-    a = 0
+def generateObstacle(a, b, c, d):
+    for i in range(a, b):
+        for j in range(c, d):
+            terrain[(i, j)] = 2
+
+
+def generateObstacles():
+    generateObstacle(10, 41, 20, 121)
+    generateObstacle(200, 401, 50, 71)
+    generateObstacle(50, 56, 5, 51)
+    generateObstacle(100, 151, 40, 81)
     b = 0
-
-    while (a < 1000):
-        terrain[(random.randint(1, 510), random.randint(1, 125))] = 2
-        a = a + 1
-
     while (b < 2):
         c = 0
         while (c < 2):
@@ -38,7 +42,7 @@ def generateObstacle():
 
 def generateCrowd():
     a = 0
-    while (a < 10):
+    while (a < 512):
         b = random.randint(0, 511)
         c = random.randint(0, 126)
         if terrain[(b, c)] == 0:
@@ -61,34 +65,39 @@ def movePeople(n):
     if y == 0:
         choice = (x - 1, 0)
 
-        if terrain[(x - 1, 0)] == 0:
+        if terrain[choice] == 0:
             crowd[n] = [x - 1, 0]
             terrain[(x - 1, 0)] = 1
             terrain[(x, y)] = 0
-            print("%d move" % (n))
+            print("%d move along the northern wall" % (n))
             return
-        elif terrain[(x - 1, 0)] == 1:
-            print("%d wait" % (n))
+        elif terrain[choice] == 1:
+            print("%d wait at the northern wall" % (n))
             return
-        else:
+        elif terrain[choice] == 3:
             terrain[(x, y)] = 0
-            print("%d arrive" % (n))
+            print("%d arrive through the northern wall" % (n))
             del crowd[n]
+        else:
+            print("error")
 
     elif x == 0:
-        if terrain[(0, y - 1)] == 0:
+        choice = (x, y - 1)
+        if terrain[choice] == 0:
             crowd[n] = [0, y - 1]
             terrain[(0, y - 1)] = 1
             terrain[(0, y)] = 0
-            print("%d move" % (n))
+            print("%d move along the western wall" % (n))
             return
-        elif terrain[(0, y - 1)] == 1:
-            print("%d wait" % (n))
+        elif terrain[choice] == 1:
+            print("%d wait at the western wall" % (n))
             return
-        else:
+        elif terrain[choice] == 3:
             terrain[(x, y)] = 0
-            print("%d arrive" % (n))
+            print("%d arrive through the western wall" % (n))
             del crowd[n]
+        else:
+            print("error")
     else:
         fistChoice = (x - 1, y - 1)
         secondChoice = (x - 1, y)
@@ -101,31 +110,33 @@ def movePeople(n):
             terrain[fistChoice] = 1
             terrain[(x, y)] = 0
             crowd[n] = [x - 1, y - 1]
-            print("%d bestmove" % (n))
+            print("%d move toward the northwest" % (n))
             return
         if terrain[fistChoice] == 1:
-            print("%d bestwait" % (n))
+            print("%d wait for the northwest place" % (n))
             return
         if terrain[fistChoice] == 2:
             if terrain[secondChoice] == 0:
                 terrain[secondChoice] = 1
                 terrain[(x, y)] = 0
                 crowd[n] = [x - 1, y]
-                print("%d secondmove" % (n))
+                print("%d move toward the west" % (n))
                 return
             elif terrain[secondChoice] == 1:
-                print("%d secondwait" % (n))
+                print("%d wait for the west place" % (n))
                 return
             else:
                 if terrain[thirdChoice] == 0:
                     terrain[thirdChoice] = 1
                     terrain[(x, y)] = 0
                     crowd[n] = [x, y - 1]
-                    print("%d thirdmove" % (n))
+                    print("%d move toward the north" % (n))
                     return
                 elif terrain[thirdChoice] == 1:
-                    print("%d thirdwait" % (n))
+                    print("%d wait for the north place" % (n))
                     return
+                else:
+                    print("error")
 
 
 def hasPeople():
@@ -137,7 +148,7 @@ def hasPeople():
 
 if __name__ == '__main__':
     generateTerrain()
-    generateObstacle()
+    generateObstacles()
     generateCrowd()
     index = 0
     while hasPeople():
