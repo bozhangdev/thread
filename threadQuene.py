@@ -38,7 +38,7 @@ def generateObstacle():
 
 def generateCrowd():
     a = 0
-    while (a < 513):
+    while (a < 10):
         b = random.randint(0, 511)
         c = random.randint(0, 126)
         if terrain[(b, c)] == 0:
@@ -47,70 +47,84 @@ def generateCrowd():
             a += 1
 
 
-def moveCrowd(n):
+def moveCrowd(index):
     lock.acquire()
     try:
-        local.index = n
-        movePeople()
+        movePeople(index)
     finally:
         lock.release()
 
 
-def movePeople():
-    index = local.index
-    x = crowd[index][0]
-    y = crowd[index][1]
+def movePeople(n):
+    x = crowd[n][0]
+    y = crowd[n][1]
     if y == 0:
         choice = (x - 1, 0)
 
         if terrain[(x - 1, 0)] == 0:
-            crowd[index] = [x - 1, 0]
+            crowd[n] = [x - 1, 0]
             terrain[(x - 1, 0)] = 1
+            terrain[(x, y)] = 0
+            print("%d move" % (n))
             return
         elif terrain[(x - 1, 0)] == 1:
+            print("%d wait" % (n))
             return
         else:
             terrain[(x, y)] = 0
-            del crowd[index]
+            print("%d arrive" % (n))
+            del crowd[n]
 
     elif x == 0:
         if terrain[(0, y - 1)] == 0:
-            crowd[index] = [0, y - 1]
+            crowd[n] = [0, y - 1]
             terrain[(0, y - 1)] = 1
+            terrain[(0, y)] = 0
+            print("%d move" % (n))
             return
         elif terrain[(0, y - 1)] == 1:
+            print("%d wait" % (n))
             return
         else:
             terrain[(x, y)] = 0
-            del crowd[index]
+            print("%d arrive" % (n))
+            del crowd[n]
     else:
         fistChoice = (x - 1, y - 1)
         secondChoice = (x - 1, y)
         thirdChoice = (x, y - 1)
         if fistChoice == 3 or secondChoice == 3 or thirdChoice == 3:
             terrain[(x, y)] = 0
+            print("%d arrive" % (n))
+            del crowd[n]
         if terrain[fistChoice] == 0:
             terrain[fistChoice] = 1
             terrain[(x, y)] = 0
-            crowd[index] = [x - 1, y - 1]
+            crowd[n] = [x - 1, y - 1]
+            print("%d bestmove" % (n))
             return
         if terrain[fistChoice] == 1:
+            print("%d bestwait" % (n))
             return
         if terrain[fistChoice] == 2:
             if terrain[secondChoice] == 0:
                 terrain[secondChoice] = 1
                 terrain[(x, y)] = 0
-                crowd[index] = [x - 1, y]
+                crowd[n] = [x - 1, y]
+                print("%d secondmove" % (n))
                 return
             elif terrain[secondChoice] == 1:
+                print("%d secondwait" % (n))
                 return
             else:
                 if terrain[thirdChoice] == 0:
                     terrain[thirdChoice] = 1
-                    terrain[(x,y)] = 0
-                    crowd[index] = [x,y-1]
+                    terrain[(x, y)] = 0
+                    crowd[n] = [x, y - 1]
+                    print("%d thirdmove" % (n))
                     return
                 elif terrain[thirdChoice] == 1:
+                    print("%d thirdwait" % (n))
                     return
 
 
@@ -125,8 +139,12 @@ if __name__ == '__main__':
     generateTerrain()
     generateObstacle()
     generateCrowd()
+    index = 0
     while hasPeople():
-        for index in range(len(crowd)):
-            t = threading.Thread(target=moveCrowd, args=index)
+        while index < len(crowd):
+            t = threading.Thread(target=moveCrowd, args=(index,))
             t.start()
             t.join()
+            index += 1
+        index = 0
+    print("finish")
