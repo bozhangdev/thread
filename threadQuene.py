@@ -41,14 +41,11 @@ def generateObstacles():
 
 
 def generateCrowd():
-    a = 0
-    while (a < 100):
-        b = random.randint(0, 511)
-        c = random.randint(0, 126)
-        if terrain[(b, c)] == 0:
-            terrain[(b, c)] = 1
-            crowd.append([b, c])
-            a += 1
+    for i in range(420,451):
+        for j in range(80, 101):
+            terrain[(i,j)] = 1
+            crowd.append([i,j])
+
 
 
 def moveCrowd(index):
