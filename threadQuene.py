@@ -47,16 +47,71 @@ def generateCrowd():
             a += 1
 
 
-def moveCrowd(*n):
+def moveCrowd(n):
     lock.acquire()
     try:
-        print("ffff")
+        local.index = n
+        movePeople()
     finally:
         lock.release()
 
 
 def movePeople():
-    print("aaaaa")
+    index = local.index
+    x = crowd[index][0]
+    y = crowd[index][1]
+    if y == 0:
+        choice = (x - 1, 0)
+
+        if terrain[(x - 1, 0)] == 0:
+            crowd[index] = [x - 1, 0]
+            terrain[(x - 1, 0)] = 1
+            return
+        elif terrain[(x - 1, 0)] == 1:
+            return
+        else:
+            terrain[(x, y)] = 0
+            del crowd[index]
+
+    elif x == 0:
+        if terrain[(0, y - 1)] == 0:
+            crowd[index] = [0, y - 1]
+            terrain[(0, y - 1)] = 1
+            return
+        elif terrain[(0, y - 1)] == 1:
+            return
+        else:
+            terrain[(x, y)] = 0
+            del crowd[index]
+    else:
+        fistChoice = (x - 1, y - 1)
+        secondChoice = (x - 1, y)
+        thirdChoice = (x, y - 1)
+        if fistChoice == 3 or secondChoice == 3 or thirdChoice == 3:
+            terrain[(x, y)] = 0
+        if terrain[fistChoice] == 0:
+            terrain[fistChoice] = 1
+            terrain[(x, y)] = 0
+            crowd[index] = [x - 1, y - 1]
+            return
+        if terrain[fistChoice] == 1:
+            return
+        if terrain[fistChoice] == 2:
+            if terrain[secondChoice] == 0:
+                terrain[secondChoice] = 1
+                terrain[(x, y)] = 0
+                crowd[index] = [x - 1, y]
+                return
+            elif terrain[secondChoice] == 1:
+                return
+            else:
+                if terrain[thirdChoice] == 0:
+                    terrain[thirdChoice] = 1
+                    terrain[(x,y)] = 0
+                    crowd[index] = [x,y-1]
+                    return
+                elif terrain[thirdChoice] == 1:
+                    return
 
 
 def hasPeople():
@@ -70,8 +125,8 @@ if __name__ == '__main__':
     generateTerrain()
     generateObstacle()
     generateCrowd()
-    while (hasPeople()):
-        for a in crowd:
-            t = threading.Thread(target=moveCrowd, args=(a))
+    while hasPeople():
+        for index in range(len(crowd)):
+            t = threading.Thread(target=moveCrowd, args=index)
             t.start()
             t.join()
