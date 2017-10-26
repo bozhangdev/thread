@@ -3,6 +3,8 @@
 
 import threading
 import random
+import resource
+import time
 
 local = threading.local()
 lock = threading.Lock()
@@ -42,9 +44,9 @@ def generateObstacles():
 
 def generateCrowd():
     a = 0
-    while (a < 512):
-        b = random.randint(0, 511)
-        c = random.randint(0, 126)
+    while (a < 2 ** 7 + 1):
+        b = random.randint(0, 510)
+        c = random.randint(0, 125)
         if terrain[(b, c)] == 0:
             terrain[(b, c)] = 1
             crowd.append([b, c])
@@ -53,10 +55,8 @@ def generateCrowd():
 
 def moveCrowd(index):
     lock.acquire()
-    try:
-        movePeople(index)
-    finally:
-        lock.release()
+    movePeople(index)
+    lock.release()
 
 
 def movePeople(n):
@@ -77,9 +77,11 @@ def movePeople(n):
         elif terrain[choice] == 3:
             terrain[(x, y)] = 0
             print("%d arrive through the northern wall" % (n))
-            del crowd[n]
+            crowd[n] = [0, 0]
+            return
         else:
             print("error")
+            return
 
     elif x == 0:
         choice = (x, y - 1)
@@ -95,9 +97,11 @@ def movePeople(n):
         elif terrain[choice] == 3:
             terrain[(x, y)] = 0
             print("%d arrive through the western wall" % (n))
-            del crowd[n]
+            crowd[n] = [0, 0]
+            return
         else:
             print("error")
+            return
     else:
         fistChoice = (x - 1, y - 1)
         secondChoice = (x - 1, y)
@@ -105,7 +109,8 @@ def movePeople(n):
         if fistChoice == 3 or secondChoice == 3 or thirdChoice == 3:
             terrain[(x, y)] = 0
             print("%d arrive" % (n))
-            del crowd[n]
+            crowd[n] = [0, 0]
+            return
         if terrain[fistChoice] == 0:
             terrain[fistChoice] = 1
             terrain[(x, y)] = 0
@@ -125,7 +130,7 @@ def movePeople(n):
             elif terrain[secondChoice] == 1:
                 print("%d wait for the west place" % (n))
                 return
-            else:
+            elif terrain[secondChoice] == 2:
                 if terrain[thirdChoice] == 0:
                     terrain[thirdChoice] = 1
                     terrain[(x, y)] = 0
@@ -137,11 +142,12 @@ def movePeople(n):
                     return
                 else:
                     print("error")
+                    return
 
 
 def hasPeople():
-    for (d, x) in terrain.items():
-        if x == 1:
+    for i in crowd:
+        if i != [0, 0]:
             return True
     return False
 
@@ -150,12 +156,16 @@ if __name__ == '__main__':
     generateTerrain()
     generateObstacles()
     generateCrowd()
-    index = 0
+    start = resource.getrusage(resource.RUSAGE_SELF)[0] + resource.getrusage(resource.RUSAGE_SELF)[1]
+    startTime = time.time()
     while hasPeople():
-        while index < len(crowd):
-            t = threading.Thread(target=moveCrowd, args=(index,))
-            t.start()
-            t.join()
-            index += 1
-        index = 0
-    print("finish")
+        for index in range(len(crowd)):
+            if crowd[index] != [0, 0]:
+                t = threading.Thread(target=moveCrowd, args=(index,))
+                t.start()
+                t.join()
+    endTime = time.time()
+    end = resource.getrusage(resource.RUSAGE_SELF)[0] + resource.getrusage(resource.RUSAGE_SELF)[1]
+    print("Finish")
+    print("The usage of CPU is: %s" % (end - start))
+    print("The time of response is: %s" % (endTime - startTime))
