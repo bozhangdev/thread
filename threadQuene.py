@@ -7,36 +7,36 @@ import resource
 import time
 
 local = threading.local()
-lock = threading.Lock()
+condition = threading.Condition()
 terrain = {(0, 0): 0}
 crowd = []
 
 
-def generateTerrain():
+def generate_terrain():
     a = 0
-    while (a < 512):
+    while a < 512:
         b = 0
-        while (b < 127):
+        while b < 128:
             terrain[(a, b)] = 0
             b = b + 1
         a = a + 1
 
 
-def generateObstacle(a, b, c, d):
+def generate_obstacle(a, b, c, d):
     for i in range(a, b):
         for j in range(c, d):
             terrain[(i, j)] = 2
 
 
-def generateObstacles():
-    generateObstacle(10, 41, 20, 121)
-    generateObstacle(200, 401, 50, 71)
-    generateObstacle(50, 56, 5, 51)
-    generateObstacle(100, 151, 40, 81)
+def generate_obstacles():
+    generate_obstacle(10, 41, 20, 121)
+    generate_obstacle(200, 401, 50, 71)
+    generate_obstacle(50, 56, 5, 51)
+    generate_obstacle(100, 151, 40, 81)
     b = 0
-    while (b < 2):
+    while b < 2:
         c = 0
-        while (c < 2):
+        while c < 2:
             terrain[(b, c)] = 3
             c = c + 1
         b = b + 1
@@ -44,19 +44,19 @@ def generateObstacles():
 
 def generateCrowd():
     a = 0
-    while (a < 2 ** 7 + 1):
-        b = random.randint(0, 510)
-        c = random.randint(0, 125)
+    while a < 2 ** 5 + 1:
+        b = random.randint(0, 511)
+        c = random.randint(0, 127)
         if terrain[(b, c)] == 0:
             terrain[(b, c)] = 1
             crowd.append([b, c])
             a += 1
 
 
-def moveCrowd(index):
-    lock.acquire()
+def move_crowd(index):
+    condition.acquire()
     movePeople(index)
-    lock.release()
+    condition.release()
 
 
 def movePeople(n):
@@ -69,14 +69,16 @@ def movePeople(n):
             crowd[n] = [x - 1, 0]
             terrain[(x - 1, 0)] = 1
             terrain[(x, y)] = 0
-            print("%d move along the northern wall" % (n))
+            print("%d move along the northern wall" % n)
+            condition.notifyAll()
             return
         elif terrain[choice] == 1:
-            print("%d wait at the northern wall" % (n))
+            print("%d wait at the northern wall" % n)
+            condition.wait()
             return
         elif terrain[choice] == 3:
             terrain[(x, y)] = 0
-            print("%d arrive through the northern wall" % (n))
+            print("%d arrive through the northern wall" % n)
             crowd[n] = [0, 0]
             return
         else:
@@ -145,23 +147,23 @@ def movePeople(n):
                     return
 
 
-def hasPeople():
-    for i in crowd:
-        if i != [0, 0]:
+def has_people():
+    for i in range(len(crowd)):
+        if crowd[i] != [0, 0]:
             return True
     return False
 
 
 if __name__ == '__main__':
-    generateTerrain()
-    generateObstacles()
+    generate_terrain()
+    generate_obstacles()
     generateCrowd()
     start = resource.getrusage(resource.RUSAGE_SELF)[0] + resource.getrusage(resource.RUSAGE_SELF)[1]
     startTime = time.time()
-    while hasPeople():
+    while has_people():
         for index in range(len(crowd)):
             if crowd[index] != [0, 0]:
-                t = threading.Thread(target=moveCrowd, args=(index,))
+                t = threading.Thread(target=move_crowd, args=(index,))
                 t.start()
                 t.join()
     endTime = time.time()

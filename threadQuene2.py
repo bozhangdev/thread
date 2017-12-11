@@ -24,10 +24,14 @@ def generateTerrain():
             terrain[(a, b)] = 0
             b = b + 1
         a = a + 1
+
+
 def generateObstacle(a, b, c, d):
     for i in range(a, b):
         for j in range(c, d):
             terrain[(i, j)] = 2
+
+
 def generateObstacles():
     generateObstacle(10, 41, 20, 121)
     generateObstacle(200, 401, 50, 71)
@@ -40,6 +44,8 @@ def generateObstacles():
             terrain[(b, c)] = 3
             c = c + 1
         b = b + 1
+
+
 def generateCrowd():
     a = 0
     while (a < 2 ** 7 + 1):
@@ -47,14 +53,14 @@ def generateCrowd():
         c = random.randint(0, 125)
         if terrain[(b, c)] == 0:
             terrain[(b, c)] = 1
-            if b>= 0 and b<= 255 and c>=0 and c<=63:
+            if b >= 0 and b <= 255 and c >= 0 and c <= 63:
                 crowd_left_top.append([b, c])
             if b >= 256 and b <= 511 and c >= 0 and c <= 63:
-                crowd_right_top.append([b,c])
+                crowd_right_top.append([b, c])
             if b >= 0 and b <= 255 and c >= 64 and c <= 127:
-                crowd_left_buttom.append([b,c])
+                crowd_left_buttom.append([b, c])
             if b >= 256 and b <= 511 and c >= 64 and c <= 127:
-                crowd_right_buttom.append([b,c])
+                crowd_right_buttom.append([b, c])
             a += 1
 
 
@@ -67,7 +73,7 @@ class part(threading.Thread):
         self.a = [0, 0]
 
     def run(self):
-        print "Starting " + self.name
+        print ("Starting " + self.name)
         ok = True
         while ok:
             ok = False
@@ -76,18 +82,18 @@ class part(threading.Thread):
                     ok = True
             for index in range(0, len(self.crowd_temp)):
                 if self.crowd_temp[index] != [0, 0]:
-                     if self.crowd_temp[index][0] == 256 or self.crowd_temp[index][1] == 64:
+                    if self.crowd_temp[index][0] == 256 or self.crowd_temp[index][1] == 64:
                         lock.acquire()
                         try:
                             self.crowd_temp[index] = self.movePeople(index, self.crowd_temp)
                         finally:
                             lock.release()
-                     else:
-                         self.crowd_temp[index] = self.movePeople(index, self.crowd_temp)
+                    else:
+                        self.crowd_temp[index] = self.movePeople(index, self.crowd_temp)
 
     def movePeople(self, n, crowd):
         global k
-        k = k+1
+        k = k + 1
         x = crowd[n][0]
         y = crowd[n][1]
         if y == 0:
@@ -171,7 +177,6 @@ class part(threading.Thread):
                         return crowd[n]
 
 
-
 if __name__ == '__main__':
     generateTerrain()
     generateObstacles()
@@ -194,8 +199,8 @@ if __name__ == '__main__':
         t.join()
 
     global k
-    print ("moved %d steps" %(k))
-    print len(crowd_right_buttom) + len(crowd_left_buttom) + len(crowd_left_top) + len(crowd_right_top)
+    print ("moved %d steps" % (k))
+    print (len(crowd_right_buttom) + len(crowd_left_buttom) + len(crowd_left_top) + len(crowd_right_top))
 
     endTime = time.time()
     end = resource.getrusage(resource.RUSAGE_SELF)[0] + resource.getrusage(resource.RUSAGE_SELF)[1]
