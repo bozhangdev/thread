@@ -180,6 +180,7 @@ class Part(threading.Thread):
             moved = move_people(index)
             if moved:
                 self.condition.notifyAll()
+            self.condition.release()
 
 
 if __name__ == '__main__':
