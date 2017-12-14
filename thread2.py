@@ -55,17 +55,19 @@ def has_people(position1, position2):
     x1 = position1[0]
     y1 = position1[1]
     x2 = position2[0]
-    y2 = position1[1]
+    y2 = position2[1]
     for i in range(len(crowd)):
-        if x1 <= crowd[i][0] < x2 and y1 <= crowd[i][1] < y2:
+        if x1 <= crowd[i][0] and crowd[i][0] < x2 and y1 <= crowd[i][1] and crowd[i][1] < y2:
             if crowd[i] != [0, 0, 0] or crowd[i] != [0, 0, 1]:
                 return True
     return False
 
 
 def can_move(position):
-    if terrain[(position[0] - 1, position[1])] == 0 or terrain[(position[0] - 1, position[1] - 1)] == 0 or terrain[(position[0], position[1] - 1)] == 0:
-        return True
+    if position != [0, 0, 0] and position != [0, 0, 1]:
+        if terrain[(position[0] - 1, position[1])] == 0 or terrain[(position[0] - 1, position[1] - 1)] == 0 or terrain[
+            (position[0], position[1] - 1)] == 0:
+            return True
     return False
 
 
@@ -140,7 +142,7 @@ def move_people(n):
                     return False
 
 
-class Part(threading.Thread):
+class part(threading.Thread):
     def __init__(self, threadID, name, condition, position1, position2):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -148,34 +150,37 @@ class Part(threading.Thread):
         self.position1 = position1
         self.position2 = position2
         self.condition = condition
-        x1 = position1[0]
-        y1 = position1[1]
-        x2 = position2[0]
-        y2 = position1[1]
+        self.x1 = position1[0]
+        self.y1 = position1[1]
+        self.x2 = position2[0]
+        self.y2 = position1[1]
+        print ("init")
 
     def run(self):
+        print("run")
         while has_people(self.position1, self.position2):
             self.condition.acquire()
             is_all_moved = True
             for i in range(len(crowd)):
-                if x1 <= crowd[i][0] < x2 and y1 <= crowd[i][1] < y2:
+                if self.x1 <= crowd[i][0] < self.x2 and self.y1 <= crowd[i][1] < self.y2:
                     if crowd[i][2] == 0:
                         is_all_moved == False
             if is_all_moved:
                 for j in range(len(crowd)):
-                    if x1 <= crowd[j][0] < x2 and y1 <= crowd[j][1] < y2:
+                    if self.x1 <= crowd[j][0] < self.x2 and self.y1 <= crowd[j][1] < self.y2:
                         crowd[j][2] == 0
             is_all_moved == True
             a = 0
             position = [0, 0, 0]
             index = 0
             for k in range(len(crowd)):
-                if x1 <= crowd[k][0] < x2 and y1 <= crowd[k][1] < y2 and crowd[k][2] == 0:
+                if self.x1 <= crowd[k][0] < self.x2 and self.y1 <= crowd[k][1] < self.y2 and crowd[k][2] == 0:
+                    print(k)
                     if (crowd[k][0] + crowd[k][1]) > a:
                         a = crowd[k][0] + crowd[k][1]
                         position = crowd[k]
                         index = k
-            while not can_move(position) and (position[0] == x1 or position[1] == y1):
+            while (not can_move(position)) and (position[0] == self.x1 or position[1] == self.y1):
                 self.condition.wait()
             moved = move_people(index)
             if moved:
@@ -184,17 +189,18 @@ class Part(threading.Thread):
 
 
 if __name__ == '__main__':
-    generateTerrain()
-    generateObstacles()
-    generateCrowd()
+    generate_terrain()
+    generate_obstacles()
+    generate_crowd()
+    condition = threading.Condition()
     start = resource.getrusage(resource.RUSAGE_SELF)[0] + resource.getrusage(resource.RUSAGE_SELF)[1]
     startTime = time.time()
 
     ThreadList = []
-    t1 = part("part1 on left top", "1", crowd_left_top)
-    t2 = part("part1 on right top", "2", crowd_right_top)
-    t3 = part("part1 on left bottom", "3", crowd_left_buttom)
-    t4 = part("part1 on right bottom", "4", crowd_right_buttom)
+    t1 = part("part1 on left top", "1", condition, [0, 0], [256, 64])
+    t2 = part("part1 on right top", "2", condition, [0, 256], [256, 128])
+    t3 = part("part1 on left bottom", "3", condition, [256, 0], [512, 64])
+    t4 = part("part1 on right bottom", "4", condition, [256, 64], [512, 128])
     ThreadList.append(t1)
     ThreadList.append(t2)
     ThreadList.append(t3)
@@ -203,10 +209,6 @@ if __name__ == '__main__':
         t.start()
     for t in ThreadList:
         t.join()
-
-    global k
-    print ("moved %d steps" % (k))
-    print (len(crowd_right_buttom) + len(crowd_left_buttom) + len(crowd_left_top) + len(crowd_right_top))
 
     endTime = time.time()
     end = resource.getrusage(resource.RUSAGE_SELF)[0] + resource.getrusage(resource.RUSAGE_SELF)[1]
